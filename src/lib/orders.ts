@@ -9,10 +9,10 @@ export type Order = {
   customerName: string;
   phone: string;
   orderType: OrderType;
-  address?: string;
-  landmark?: string;
+  address?: string | undefined;
+  landmark?: string | undefined;
   paymentMethod: PaymentMethod;
-  momoNumber?: string;
+  momoNumber?: string | undefined;
   items: CartLine[];
   subtotal: number;
   deliveryFee: number;

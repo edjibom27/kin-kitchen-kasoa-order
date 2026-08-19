@@ -67,7 +67,7 @@ const checkoutSchema = baseSchema
     { path: ["momoNumber"], message: "Enter a valid MoMo number" },
   );
 
-type Errors = Partial<Record<string, string>>;
+type Errors = Record<string, string | undefined>;
 
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -159,7 +159,7 @@ function CheckoutPage() {
           <section className="rounded-3xl border border-border/70 bg-card p-6 shadow-soft">
             <h2 className="font-display text-lg font-semibold">Your details</h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label="Full name" error={errors.fullName}>
+              <Field label="Full name" error={errors["fullName"]}>
                 <Input
                   name="fullName"
                   placeholder="Ama Mensah"
@@ -167,7 +167,7 @@ function CheckoutPage() {
                   autoComplete="name"
                 />
               </Field>
-              <Field label="Phone number" error={errors.phone}>
+              <Field label="Phone number" error={errors["phone"]}>
                 <Input
                   name="phone"
                   placeholder="024 123 4567"
@@ -198,7 +198,7 @@ function CheckoutPage() {
 
             {orderType === "delivery" && (
               <div className="mt-5 grid gap-4">
-                <Field label="Delivery address" error={errors.address}>
+                <Field label="Delivery address" error={errors["address"]}>
                   <Input
                     name="address"
                     placeholder="House 24, Ofaakor Road, Kasoa"
@@ -207,7 +207,7 @@ function CheckoutPage() {
                 </Field>
                 <Field
                   label="Landmark / delivery instructions"
-                  error={errors.landmark}
+                  error={errors["landmark"]}
                   optional
                 >
                   <Textarea
@@ -243,7 +243,7 @@ function CheckoutPage() {
             </div>
             {paymentMethod === "momo" && (
               <div className="mt-5">
-                <Field label="MoMo phone number" error={errors.momoNumber}>
+                <Field label="MoMo phone number" error={errors["momoNumber"]}>
                   <Input
                     name="momoNumber"
                     placeholder="055 012 3456"
@@ -314,8 +314,8 @@ function Field({
   children,
 }: {
   label: string;
-  error?: string;
-  optional?: boolean;
+  error?: string | undefined;
+  optional?: boolean | undefined;
   children: React.ReactNode;
 }) {
   return (
