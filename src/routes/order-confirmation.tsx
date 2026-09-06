@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCedis } from "@/lib/menu-data";
-import { loadLastOrder, type Order } from "@/lib/orders";
+import { getOrderFn } from "@/lib/orders.server";
+
+const searchSchema = z.object({
+  order: z.string().optional(),
+  token: z.string().optional(),
+});
 
 export const Route = createFileRoute("/order-confirmation")({
   head: () => ({
@@ -21,21 +26,26 @@ export const Route = createFileRoute("/order-confirmation")({
       },
     ],
   }),
+  validateSearch: searchSchema,
+  loaderDeps: ({ search }) => ({ order: search.order, token: search.token }),
+  loader: async ({ deps }) => {
+    if (!deps.order) return null;
+    // Retrieves the real order from Supabase via the order number + guest
+    // token in the URL (see get_order() in
+    // supabase/migrations/20260901000002_order_functions.sql). This is a
+    // live fetch, not localStorage — refreshing this page, or opening the
+    // link again later, re-fetches the current state of the order.
+    return await getOrderFn({
+      data: { orderNumber: deps.order, guestToken: deps.token },
+    });
+  },
   component: OrderConfirmationPage,
 });
 
 function OrderConfirmationPage() {
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const result = Route.useLoaderData();
 
-  useEffect(() => {
-    setOrder(loadLastOrder());
-    setLoaded(true);
-  }, []);
-
-  if (!loaded) return <div className="min-h-[60vh]" />;
-
-  if (!order) {
+  if (!result) {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
         <h1 className="text-3xl font-bold">No recent order found</h1>
@@ -49,6 +59,20 @@ function OrderConfirmationPage() {
     );
   }
 
+  if (!result.ok) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+        <h1 className="text-3xl font-bold">We couldn't load that order</h1>
+        <p className="mt-3 text-muted-foreground">{result.message}</p>
+        <Button asChild variant="hero" size="lg" className="mt-8">
+          <Link to="/menu">Back to menu</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const order = result.order;
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:py-16">
       <div className="fade-up rounded-3xl border border-border/70 bg-card p-6 text-center shadow-soft sm:p-10">
@@ -57,8 +81,8 @@ function OrderConfirmationPage() {
         </span>
         <h1 className="mt-6 text-3xl font-bold sm:text-4xl">Order received!</h1>
         <p className="mt-3 text-muted-foreground">
-          Thanks {order.customerName.split(" ")[0]} — our Kasoa kitchen is on it.
-          We'll call {order.phone} shortly to confirm.
+          Thanks {order.customerName.split(" ")[0]} — our Kasoa kitchen is on it. We'll call{" "}
+          {order.phone} shortly to confirm.
         </p>
 
         <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold">
@@ -82,23 +106,17 @@ function OrderConfirmationPage() {
           />
           {order.address && <Detail label="Address" value={order.address} />}
           {order.landmark && <Detail label="Landmark" value={order.landmark} />}
-          {order.momoNumber && (
-            <Detail label="MoMo number" value={order.momoNumber} />
-          )}
+          {order.momoNumber && <Detail label="MoMo number" value={order.momoNumber} />}
         </dl>
 
-        <h2 className="mt-8 font-display text-lg font-semibold">
-          Items ordered
-        </h2>
+        <h2 className="mt-8 font-display text-lg font-semibold">Items ordered</h2>
         <ul className="mt-4 space-y-3 text-sm">
           {order.items.map((line) => (
             <li key={line.id} className="flex justify-between gap-3">
               <span className="text-muted-foreground">
                 {line.quantity} × {line.name}
               </span>
-              <span className="shrink-0 font-medium">
-                {formatCedis(line.price * line.quantity)}
-              </span>
+              <span className="shrink-0 font-medium">{formatCedis(line.lineTotal)}</span>
             </li>
           ))}
         </ul>
@@ -112,9 +130,7 @@ function OrderConfirmationPage() {
             <dt className="text-muted-foreground">
               {order.deliveryFee ? "Delivery fee" : "Pickup"}
             </dt>
-            <dd>
-              {order.deliveryFee ? formatCedis(order.deliveryFee) : "Free"}
-            </dd>
+            <dd>{order.deliveryFee ? formatCedis(order.deliveryFee) : "Free"}</dd>
           </div>
         </dl>
         <div className="mt-4 flex justify-between border-t border-border pt-4">
@@ -135,9 +151,7 @@ function OrderConfirmationPage() {
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
       <dd className="mt-1 font-medium">{value}</dd>
     </div>
   );

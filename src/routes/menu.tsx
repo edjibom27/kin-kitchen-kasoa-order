@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { MenuItemCard } from "@/components/menu-item-card";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES, MENU_ITEMS, type Category } from "@/lib/menu-data";
+import { menuItemsQueryOptions, categoriesQueryOptions } from "@/lib/queries";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({
@@ -21,36 +22,37 @@ export const Route = createFileRoute("/menu")({
       },
     ],
   }),
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(menuItemsQueryOptions()),
+      context.queryClient.ensureQueryData(categoriesQueryOptions()),
+    ]);
+  },
   component: MenuPage,
 });
 
-type Filter = Category | "All";
+type Filter = string;
 
 function MenuPage() {
+  const { data: menuItems } = useSuspenseQuery(menuItemsQueryOptions());
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const [filter, setFilter] = useState<Filter>("All");
-  const items =
-    filter === "All"
-      ? MENU_ITEMS
-      : MENU_ITEMS.filter((item) => item.category === filter);
+
+  const items = filter === "All" ? menuItems : menuItems.filter((item) => item.category === filter);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <header className="max-w-2xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">
-          Our Menu
-        </p>
-        <h1 className="mt-3 text-4xl font-bold sm:text-5xl">
-          Everything we cook in Kasoa
-        </h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Our Menu</p>
+        <h1 className="mt-3 text-4xl font-bold sm:text-5xl">Everything we cook in Kasoa</h1>
         <p className="mt-4 text-base text-muted-foreground">
-          Freshly prepared to order. Prices include takeaway packaging — no
-          hidden charges.
+          Freshly prepared to order. Prices include takeaway packaging — no hidden charges.
         </p>
       </header>
 
       <div className="sticky top-16 z-30 -mx-4 mt-8 overflow-x-auto bg-background/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="flex w-max gap-2">
-          {(["All", ...CATEGORIES] as Filter[]).map((cat) => (
+          {(["All", ...categories.map((cat) => cat.name)] as Filter[]).map((cat) => (
             <Button
               key={cat}
               size="sm"

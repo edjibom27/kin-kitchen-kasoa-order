@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-context";
 import { formatCedis } from "@/lib/menu-data";
-import { DELIVERY_FEE } from "@/lib/orders";
+import { restaurantSettingsQueryOptions } from "@/lib/queries";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -21,12 +22,15 @@ export const Route = createFileRoute("/cart")({
       },
     ],
   }),
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(restaurantSettingsQueryOptions());
+  },
   component: CartPage,
 });
 
 function CartPage() {
-  const { lines, subtotal, increment, decrement, removeItem, itemCount } =
-    useCart();
+  const { lines, subtotal, increment, decrement, removeItem, itemCount } = useCart();
+  const { data: settings } = useSuspenseQuery(restaurantSettingsQueryOptions());
 
   if (lines.length === 0) {
     return (
@@ -70,12 +74,8 @@ function CartPage() {
               <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="truncate font-display text-base font-semibold">
-                      {line.name}
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      {formatCedis(line.price)} each
-                    </p>
+                    <h2 className="truncate font-display text-base font-semibold">{line.name}</h2>
+                    <p className="text-sm text-muted-foreground">{formatCedis(line.price)} each</p>
                   </div>
                   <button
                     onClick={() => removeItem(line.id)}
@@ -97,9 +97,7 @@ function CartPage() {
                     >
                       <Minus />
                     </Button>
-                    <span className="w-8 text-center text-sm font-semibold">
-                      {line.quantity}
-                    </span>
+                    <span className="w-8 text-center text-sm font-semibold">{line.quantity}</span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -129,7 +127,7 @@ function CartPage() {
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Delivery (Kasoa)</dt>
               <dd className="font-medium">
-                {formatCedis(DELIVERY_FEE)}{" "}
+                {formatCedis(settings.deliveryFee)}{" "}
                 <span className="text-muted-foreground">or free pickup</span>
               </dd>
             </div>

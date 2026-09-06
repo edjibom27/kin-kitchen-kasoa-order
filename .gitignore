@@ -16,6 +16,12 @@ dist-ssr
 .nitro
 *.local
 
+# Environment variables — never commit real values (Supabase keys, service
+# role key, etc). See .env.example for the variables this project expects.
+.env
+.env.*
+!.env.example
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

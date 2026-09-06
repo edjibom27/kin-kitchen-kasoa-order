@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,13 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart-context";
 import { formatCedis } from "@/lib/menu-data";
+import { restaurantSettingsQueryOptions } from "@/lib/queries";
 import {
-  DELIVERY_FEE,
-  generateOrderNumber,
-  saveOrder,
+  createOrderFn,
+  cartLinesToOrderItems,
   type OrderType,
   type PaymentMethod,
-} from "@/lib/orders";
+} from "@/lib/orders.server";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -32,6 +33,9 @@ export const Route = createFileRoute("/checkout")({
       },
     ],
   }),
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(restaurantSettingsQueryOptions());
+  },
   component: CheckoutPage,
 });
 
@@ -41,11 +45,7 @@ const phoneRule = z
   .regex(/^[0-9+\s-]{9,15}$/, { message: "Enter a valid phone number" });
 
 const baseSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(2, { message: "Please enter your full name" })
-    .max(80),
+  fullName: z.string().trim().min(2, { message: "Please enter your full name" }).max(80),
   phone: phoneRule,
   orderType: z.enum(["delivery", "pickup"]),
   address: z.string().trim().max(200).optional(),
@@ -54,16 +54,19 @@ const baseSchema = z.object({
   momoNumber: z.string().trim().optional(),
 });
 
+// NOTE: This client-side Zod validation exists purely for instant UX
+// feedback (inline field errors, no round trip needed to see a typo).
+// It is NOT what makes checkout safe — see src/lib/orders.server.ts and
+// supabase/migrations/20260901000002_order_functions.sql, where the same
+// checks (and the actual prices/totals) are re-verified inside the
+// database, which is the only thing a malicious client cannot bypass.
 const checkoutSchema = baseSchema
+  .refine((data) => data.orderType !== "delivery" || (data.address?.length ?? 0) >= 5, {
+    path: ["address"],
+    message: "Delivery address is required",
+  })
   .refine(
-    (data) =>
-      data.orderType !== "delivery" || (data.address?.length ?? 0) >= 5,
-    { path: ["address"], message: "Delivery address is required" },
-  )
-  .refine(
-    (data) =>
-      data.paymentMethod !== "momo" ||
-      phoneRule.safeParse(data.momoNumber ?? "").success,
+    (data) => data.paymentMethod !== "momo" || phoneRule.safeParse(data.momoNumber ?? "").success,
     { path: ["momoNumber"], message: "Enter a valid MoMo number" },
   );
 
@@ -72,21 +75,20 @@ type Errors = Record<string, string | undefined>;
 function CheckoutPage() {
   const navigate = useNavigate();
   const { lines, subtotal, clearCart } = useCart();
+  const { data: settings } = useSuspenseQuery(restaurantSettingsQueryOptions());
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const deliveryFee = orderType === "delivery" ? DELIVERY_FEE : 0;
+  const deliveryFee = orderType === "delivery" ? settings.deliveryFee : 0;
   const total = subtotal + deliveryFee;
 
   if (lines.length === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
         <h1 className="text-3xl font-bold">Nothing to check out yet</h1>
-        <p className="mt-3 text-muted-foreground">
-          Add some dishes to your cart first.
-        </p>
+        <p className="mt-3 text-muted-foreground">Add some dishes to your cart first.</p>
         <Button asChild variant="hero" size="lg" className="mt-8">
           <Link to="/menu">Go to menu</Link>
         </Button>
@@ -94,7 +96,21 @@ function CheckoutPage() {
     );
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  if (!settings.isAcceptingOrders) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+        <h1 className="text-3xl font-bold">We're not taking orders right now</h1>
+        <p className="mt-3 text-muted-foreground">
+          KIN Kitchen isn't accepting online orders at the moment. Please check back shortly.
+        </p>
+        <Button asChild variant="outline" size="lg" className="mt-8">
+          <Link to="/cart">Back to cart</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const parsed = checkoutSchema.safeParse({
@@ -122,26 +138,45 @@ function CheckoutPage() {
     setSubmitting(true);
 
     const data = parsed.data;
-    const order = {
-      orderNumber: generateOrderNumber(),
-      createdAt: new Date().toISOString(),
-      customerName: data.fullName,
-      phone: data.phone,
-      orderType: data.orderType,
-      address: data.orderType === "delivery" ? data.address : undefined,
-      landmark: data.landmark || undefined,
-      paymentMethod: data.paymentMethod,
-      momoNumber: data.paymentMethod === "momo" ? data.momoNumber : undefined,
-      items: lines,
-      subtotal,
-      deliveryFee,
-      total,
-      prepTimeMinutes: data.orderType === "delivery" ? 45 : 25,
-    };
 
-    saveOrder(order);
-    clearCart();
-    navigate({ to: "/order-confirmation" });
+    try {
+      // Only ids + quantities are sent. Price, subtotal, delivery fee and
+      // total are computed server-side inside create_order() — the browser's
+      // own `subtotal`/`total` above are for display only and are never
+      // trusted by the backend.
+      const result = await createOrderFn({
+        data: {
+          customerName: data.fullName,
+          phone: data.phone,
+          orderType: data.orderType,
+          address: data.orderType === "delivery" ? data.address : undefined,
+          landmark: data.landmark || undefined,
+          paymentMethod: data.paymentMethod,
+          momoNumber: data.paymentMethod === "momo" ? data.momoNumber : undefined,
+          items: cartLinesToOrderItems(lines),
+        },
+      });
+
+      if (!result.ok) {
+        toast.error(result.message);
+        setSubmitting(false);
+        return;
+      }
+
+      // Cart is cleared only after the order is confirmed created — if the
+      // request fails, the customer keeps their cart and can retry.
+      clearCart();
+      navigate({
+        to: "/order-confirmation",
+        search: {
+          order: result.order.orderNumber,
+          token: result.order.guestToken,
+        },
+      });
+    } catch {
+      toast.error("We couldn't reach the server. Please check your connection and try again.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -151,10 +186,7 @@ function CheckoutPage() {
         We'll call you to confirm before we start cooking.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-10 grid gap-8 lg:grid-cols-[1fr_360px]"
-      >
+      <form onSubmit={handleSubmit} className="mt-10 grid gap-8 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <section className="rounded-3xl border border-border/70 bg-card p-6 shadow-soft">
             <h2 className="font-display text-lg font-semibold">Your details</h2>
@@ -184,7 +216,7 @@ function CheckoutPage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <OptionCard
                 title="Delivery"
-                description={`Anywhere in Kasoa · ${formatCedis(DELIVERY_FEE)}`}
+                description={`Anywhere in Kasoa · ${formatCedis(settings.deliveryFee)}`}
                 selected={orderType === "delivery"}
                 onSelect={() => setOrderType("delivery")}
               />
@@ -205,11 +237,7 @@ function CheckoutPage() {
                     maxLength={200}
                   />
                 </Field>
-                <Field
-                  label="Landmark / delivery instructions"
-                  error={errors["landmark"]}
-                  optional
-                >
+                <Field label="Landmark / delivery instructions" error={errors["landmark"]} optional>
                   <Textarea
                     name="landmark"
                     placeholder="Near Kasoa Toll Booth, blue gate. Call on arrival."
@@ -224,8 +252,7 @@ function CheckoutPage() {
           <section className="rounded-3xl border border-border/70 bg-card p-6 shadow-soft">
             <h2 className="font-display text-lg font-semibold">Payment</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Payment is confirmed manually by our team — nothing is charged
-              online.
+              Payment is confirmed manually by our team — nothing is charged online.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <OptionCard
@@ -284,10 +311,11 @@ function CheckoutPage() {
           </dl>
           <div className="mt-4 flex justify-between border-t border-border pt-4">
             <span className="font-display font-semibold">Total</span>
-            <span className="font-display text-xl font-bold text-accent">
-              {formatCedis(total)}
-            </span>
+            <span className="font-display text-xl font-bold text-accent">{formatCedis(total)}</span>
           </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Final totals are confirmed by our server when you place the order.
+          </p>
 
           <Button
             type="submit"
@@ -322,9 +350,7 @@ function Field({
     <div className="grid gap-2">
       <Label className="text-sm font-medium">
         {label}
-        {optional && (
-          <span className="ml-1 text-xs text-muted-foreground">(optional)</span>
-        )}
+        {optional && <span className="ml-1 text-xs text-muted-foreground">(optional)</span>}
       </Label>
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -355,9 +381,7 @@ function OptionCard({
       }`}
     >
       <span className="block font-display text-sm font-semibold">{title}</span>
-      <span className="mt-1 block text-xs text-muted-foreground">
-        {description}
-      </span>
+      <span className="mt-1 block text-xs text-muted-foreground">{description}</span>
     </button>
   );
 }
