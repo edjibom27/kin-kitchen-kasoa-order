@@ -14,6 +14,9 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as OrderConfirmationRouteImport } from './routes/order-confirmation'
+import { Route as StaffIndexRouteImport } from './routes/staff/index'
+import { Route as StaffOrderNumberRouteImport } from './routes/staff/$orderNumber'
+import { Route as StaffLoginRouteImport } from './routes/staff/login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +43,21 @@ const OrderConfirmationRoute = OrderConfirmationRouteImport.update({
   path: '/order-confirmation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StaffIndexRoute = StaffIndexRouteImport.update({
+  id: '/staff/',
+  path: '/staff/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffOrderNumberRoute = StaffOrderNumberRouteImport.update({
+  id: '/staff/$orderNumber',
+  path: '/staff/$orderNumber',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffLoginRoute = StaffLoginRouteImport.update({
+  id: '/staff/login',
+  path: '/staff/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +65,9 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/staff/$orderNumber': typeof StaffOrderNumberRoute
+  '/staff/login': typeof StaffLoginRoute
+  '/staff/': typeof StaffIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +75,9 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/staff/$orderNumber': typeof StaffOrderNumberRoute
+  '/staff/login': typeof StaffLoginRoute
+  '/staff': typeof StaffIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +86,41 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/staff/$orderNumber': typeof StaffOrderNumberRoute
+  '/staff/login': typeof StaffLoginRoute
+  '/staff/': typeof StaffIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cart' | '/checkout' | '/menu' | '/order-confirmation'
+  fullPaths:
+    | '/'
+    | '/cart'
+    | '/checkout'
+    | '/menu'
+    | '/order-confirmation'
+    | '/staff/$orderNumber'
+    | '/staff/login'
+    | '/staff/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cart' | '/checkout' | '/menu' | '/order-confirmation'
-  id: '__root__' | '/' | '/cart' | '/checkout' | '/menu' | '/order-confirmation'
+  to:
+    | '/'
+    | '/cart'
+    | '/checkout'
+    | '/menu'
+    | '/order-confirmation'
+    | '/staff/$orderNumber'
+    | '/staff/login'
+    | '/staff'
+  id:
+    | '__root__'
+    | '/'
+    | '/cart'
+    | '/checkout'
+    | '/menu'
+    | '/order-confirmation'
+    | '/staff/$orderNumber'
+    | '/staff/login'
+    | '/staff/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +129,9 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   MenuRoute: typeof MenuRoute
   OrderConfirmationRoute: typeof OrderConfirmationRoute
+  StaffOrderNumberRoute: typeof StaffOrderNumberRoute
+  StaffLoginRoute: typeof StaffLoginRoute
+  StaffIndexRoute: typeof StaffIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +171,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderConfirmationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/staff/': {
+      id: '/staff/'
+      path: '/staff'
+      fullPath: '/staff/'
+      preLoaderRoute: typeof StaffIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff/$orderNumber': {
+      id: '/staff/$orderNumber'
+      path: '/staff/$orderNumber'
+      fullPath: '/staff/$orderNumber'
+      preLoaderRoute: typeof StaffOrderNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff/login': {
+      id: '/staff/login'
+      path: '/staff/login'
+      fullPath: '/staff/login'
+      preLoaderRoute: typeof StaffLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +201,9 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   MenuRoute: MenuRoute,
   OrderConfirmationRoute: OrderConfirmationRoute,
+  StaffOrderNumberRoute: StaffOrderNumberRoute,
+  StaffLoginRoute: StaffLoginRoute,
+  StaffIndexRoute: StaffIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

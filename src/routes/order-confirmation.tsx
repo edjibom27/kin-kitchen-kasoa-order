@@ -1,14 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCedis } from "@/lib/menu-data";
-import { getOrderFn } from "@/lib/orders.server";
+import { getOrderFn, type OrderActionResult } from "@/lib/orders.server";
+import { OrderStatusBadge } from "@/components/order-status-badge";
 
 const searchSchema = z.object({
   order: z.string().optional(),
   token: z.string().optional(),
 });
+
+const TERMINAL_STATUSES = new Set(["delivered", "completed", "cancelled"]);
 
 export const Route = createFileRoute("/order-confirmation")({
   head: () => ({
@@ -43,7 +47,24 @@ export const Route = createFileRoute("/order-confirmation")({
 });
 
 function OrderConfirmationPage() {
-  const result = Route.useLoaderData();
+  const loaderResult = Route.useLoaderData();
+  const { order: orderNumber, token } = Route.useSearch();
+
+  // Polls for status updates (Stage 2) on top of the Stage 1 loader — once a
+  // staff member moves the order along, this page picks it up without the
+  // customer needing to refresh. Polling stops once the order reaches a
+  // terminal state.
+  const { data: result } = useQuery<OrderActionResult | null>({
+    queryKey: ["order-confirmation", orderNumber, token],
+    queryFn: () => getOrderFn({ data: { orderNumber: orderNumber!, guestToken: token } }),
+    initialData: loaderResult,
+    enabled: Boolean(orderNumber),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data || !data.ok) return false;
+      return TERMINAL_STATUSES.has(data.order.status) ? false : 20_000;
+    },
+  });
 
   if (!result) {
     return (
@@ -72,24 +93,46 @@ function OrderConfirmationPage() {
   }
 
   const order = result.order;
+  const isCancelled = order.status === "cancelled";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:py-16">
       <div className="fade-up rounded-3xl border border-border/70 bg-card p-6 text-center shadow-soft sm:p-10">
-        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-success/15">
-          <CheckCircle2 className="h-8 w-8 text-success" />
+        <span
+          className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl ${
+            isCancelled ? "bg-destructive/15" : "bg-success/15"
+          }`}
+        >
+          {isCancelled ? (
+            <XCircle className="h-8 w-8 text-destructive" />
+          ) : (
+            <CheckCircle2 className="h-8 w-8 text-success" />
+          )}
         </span>
-        <h1 className="mt-6 text-3xl font-bold sm:text-4xl">Order received!</h1>
+        <h1 className="mt-6 text-3xl font-bold sm:text-4xl">
+          {isCancelled ? "Order cancelled" : "Order received!"}
+        </h1>
         <p className="mt-3 text-muted-foreground">
-          Thanks {order.customerName.split(" ")[0]} — our Kasoa kitchen is on it. We'll call{" "}
-          {order.phone} shortly to confirm.
+          {isCancelled
+            ? `This order was cancelled. If you have questions, call us and mention ${order.orderNumber}.`
+            : `Thanks ${order.customerName.split(" ")[0]} — our Kasoa kitchen is on it. We'll call ${order.phone} shortly to confirm.`}
         </p>
 
-        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold">
-          <Clock className="h-4 w-4 text-accent" />
-          Estimated {order.orderType === "delivery" ? "delivery" : "pickup"} in{" "}
-          {order.prepTimeMinutes} minutes
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <OrderStatusBadge status={order.status} />
+          {!isCancelled && (
+            <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold">
+              <Clock className="h-4 w-4 text-accent" />
+              Estimated {order.orderType === "delivery" ? "delivery" : "pickup"} in{" "}
+              {order.prepTimeMinutes} minutes
+            </div>
+          )}
         </div>
+        {!TERMINAL_STATUSES.has(order.status) && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            This page updates automatically as your order progresses.
+          </p>
+        )}
       </div>
 
       <div className="mt-6 rounded-3xl border border-border/70 bg-card p-6 shadow-soft sm:p-8">

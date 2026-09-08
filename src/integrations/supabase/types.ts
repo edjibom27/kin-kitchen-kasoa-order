@@ -334,6 +334,13 @@ export type Database = {
         Returns: boolean
       }
       is_staff_or_admin: { Args: { p_user_id: string }; Returns: boolean }
+      update_order_status: {
+        Args: {
+          p_order_id: string
+          p_new_status: Database["public"]["Enums"]["order_status"]
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "customer" | "staff" | "admin"

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import type { CartLine } from "@/lib/cart-context";
+import type { OrderStatus } from "@/lib/order-status";
 
 export type OrderType = "delivery" | "pickup";
 export type PaymentMethod = "cash" | "momo";
@@ -20,7 +21,7 @@ export type Order = {
   subtotal: number;
   deliveryFee: number;
   total: number;
-  status: string;
+  status: OrderStatus;
   prepTimeMinutes: number;
   createdAt: string;
   items: Array<{
@@ -88,7 +89,7 @@ function mapOrderRow(raw: Record<string, unknown>): Order {
     subtotal: Number(raw["subtotal"]),
     deliveryFee: Number(raw["delivery_fee"]),
     total: Number(raw["total"]),
-    status: String(raw["status"]),
+    status: raw["status"] as OrderStatus,
     prepTimeMinutes: Number(raw["prep_time_minutes"]),
     createdAt: String(raw["created_at"]),
     items: items.map((it) => ({

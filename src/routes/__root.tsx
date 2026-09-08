@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -137,21 +138,26 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Staff/admin dashboard renders its own header/nav — the customer cart and
+  // menu chrome doesn't belong there. Every customer-facing route (/, /menu,
+  // /cart, /checkout, /order-confirmation) is unaffected.
+  const isStaffRoute = useRouterState({
+    select: (s) => s.location.pathname.startsWith("/staff"),
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
         <div className="flex min-h-screen flex-col">
-          <SiteHeader />
+          {!isStaffRoute && <SiteHeader />}
           <main className="flex-1">
             {/* Required: nested routes render here. */}
             <Outlet />
           </main>
-          <SiteFooter />
+          {!isStaffRoute && <SiteFooter />}
         </div>
         <Toaster position="top-center" richColors />
       </CartProvider>
     </QueryClientProvider>
   );
 }
-
