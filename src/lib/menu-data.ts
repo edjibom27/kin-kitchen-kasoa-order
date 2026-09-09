@@ -38,6 +38,10 @@ function resolveImage(imageKey: string): string {
   return (IMAGE_MAP as Record<string, string>)[imageKey] ?? jollof;
 }
 
+/** Valid `menu_items.image_key` values — used by the staff menu-item form so
+ * staff can only pick a key that actually resolves to a real bundled image. */
+export const IMAGE_KEYS = Object.keys(IMAGE_MAP) as (keyof typeof IMAGE_MAP)[];
+
 export type Category = string;
 
 export type MenuItem = {

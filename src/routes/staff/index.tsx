@@ -4,11 +4,12 @@ import { formatDistanceToNow } from "date-fns";
 import { AlertCircle, Bike, ShoppingBag, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StaffGuard, signOutStaff, useStaffSession } from "@/lib/staff-auth";
+import { StaffGuard } from "@/lib/staff-auth";
 import { staffOrdersQueryOptions, type StatusFilter } from "@/lib/staff-orders";
 import { formatCedis } from "@/lib/menu-data";
 import { OrderStatusBadge } from "@/components/order-status-badge";
 import { ORDER_STATUSES } from "@/lib/order-status";
+import { StaffNav } from "@/components/staff-nav";
 import { useState } from "react";
 
 export const Route = createFileRoute("/staff/")({
@@ -34,7 +35,6 @@ const FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 function StaffDashboard() {
-  const session = useStaffSession();
   const [filter, setFilter] = useState<StatusFilter>("all");
   const {
     data: orders,
@@ -47,29 +47,11 @@ function StaffDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/70 bg-card">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-              KIN Kitchen
-            </p>
-            <h1 className="text-2xl font-bold">Order dashboard</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {session.status === "authorized" && (
-              <span className="hidden text-sm text-muted-foreground sm:inline">
-                {session.session.user.email}
-              </span>
-            )}
-            <Button variant="outline" size="sm" onClick={() => void signOutStaff()}>
-              Sign out
-            </Button>
-          </div>
-        </div>
-      </header>
+      <StaffNav active="orders" />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div className="sticky top-0 z-30 -mx-4 overflow-x-auto bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+        <h1 className="text-2xl font-bold">Order dashboard</h1>
+        <div className="sticky top-0 z-30 -mx-4 mt-4 overflow-x-auto bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
           <div className="flex w-max gap-2">
             {FILTERS.map((f) => (
               <Button

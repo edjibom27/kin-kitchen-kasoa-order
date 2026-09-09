@@ -17,6 +17,8 @@ import { Route as OrderConfirmationRouteImport } from './routes/order-confirmati
 import { Route as StaffIndexRouteImport } from './routes/staff/index'
 import { Route as StaffOrderNumberRouteImport } from './routes/staff/$orderNumber'
 import { Route as StaffLoginRouteImport } from './routes/staff/login'
+import { Route as StaffMenuRouteImport } from './routes/staff/menu'
+import { Route as StaffSettingsRouteImport } from './routes/staff/settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +60,16 @@ const StaffLoginRoute = StaffLoginRouteImport.update({
   path: '/staff/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StaffMenuRoute = StaffMenuRouteImport.update({
+  id: '/staff/menu',
+  path: '/staff/menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffSettingsRoute = StaffSettingsRouteImport.update({
+  id: '/staff/settings',
+  path: '/staff/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +79,8 @@ export interface FileRoutesByFullPath {
   '/order-confirmation': typeof OrderConfirmationRoute
   '/staff/$orderNumber': typeof StaffOrderNumberRoute
   '/staff/login': typeof StaffLoginRoute
+  '/staff/menu': typeof StaffMenuRoute
+  '/staff/settings': typeof StaffSettingsRoute
   '/staff/': typeof StaffIndexRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +91,8 @@ export interface FileRoutesByTo {
   '/order-confirmation': typeof OrderConfirmationRoute
   '/staff/$orderNumber': typeof StaffOrderNumberRoute
   '/staff/login': typeof StaffLoginRoute
+  '/staff/menu': typeof StaffMenuRoute
+  '/staff/settings': typeof StaffSettingsRoute
   '/staff': typeof StaffIndexRoute
 }
 export interface FileRoutesById {
@@ -88,6 +104,8 @@ export interface FileRoutesById {
   '/order-confirmation': typeof OrderConfirmationRoute
   '/staff/$orderNumber': typeof StaffOrderNumberRoute
   '/staff/login': typeof StaffLoginRoute
+  '/staff/menu': typeof StaffMenuRoute
+  '/staff/settings': typeof StaffSettingsRoute
   '/staff/': typeof StaffIndexRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +118,8 @@ export interface FileRouteTypes {
     | '/order-confirmation'
     | '/staff/$orderNumber'
     | '/staff/login'
+    | '/staff/menu'
+    | '/staff/settings'
     | '/staff/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +130,8 @@ export interface FileRouteTypes {
     | '/order-confirmation'
     | '/staff/$orderNumber'
     | '/staff/login'
+    | '/staff/menu'
+    | '/staff/settings'
     | '/staff'
   id:
     | '__root__'
@@ -120,6 +142,8 @@ export interface FileRouteTypes {
     | '/order-confirmation'
     | '/staff/$orderNumber'
     | '/staff/login'
+    | '/staff/menu'
+    | '/staff/settings'
     | '/staff/'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +155,8 @@ export interface RootRouteChildren {
   OrderConfirmationRoute: typeof OrderConfirmationRoute
   StaffOrderNumberRoute: typeof StaffOrderNumberRoute
   StaffLoginRoute: typeof StaffLoginRoute
+  StaffMenuRoute: typeof StaffMenuRoute
+  StaffSettingsRoute: typeof StaffSettingsRoute
   StaffIndexRoute: typeof StaffIndexRoute
 }
 
@@ -192,6 +218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/staff/menu': {
+      id: '/staff/menu'
+      path: '/staff/menu'
+      fullPath: '/staff/menu'
+      preLoaderRoute: typeof StaffMenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff/settings': {
+      id: '/staff/settings'
+      path: '/staff/settings'
+      fullPath: '/staff/settings'
+      preLoaderRoute: typeof StaffSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -203,6 +243,8 @@ const rootRouteChildren: RootRouteChildren = {
   OrderConfirmationRoute: OrderConfirmationRoute,
   StaffOrderNumberRoute: StaffOrderNumberRoute,
   StaffLoginRoute: StaffLoginRoute,
+  StaffMenuRoute: StaffMenuRoute,
+  StaffSettingsRoute: StaffSettingsRoute,
   StaffIndexRoute: StaffIndexRoute,
 }
 export const routeTree = rootRouteImport
