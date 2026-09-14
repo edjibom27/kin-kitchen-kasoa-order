@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { attachOptionalSupabaseAuth } from "@/lib/optional-supabase-auth";
 import type { CartLine } from "@/lib/cart-context";
 import type { OrderStatus } from "@/lib/order-status";
 
@@ -139,11 +139,19 @@ const createOrderInputSchema = z.object({
  * doesn't apply (e.g. no address for a pickup order); the SQL function
  * treats "" the same as null via `coalesce`/`nullif`, so this has no effect
  * on stored data — see create_order() in the migration.
+ *
+ * Stage 4: uses attachOptionalSupabaseAuth so that a logged-in customer's
+ * session is forwarded into the RPC call — create_order() already reads
+ * auth.uid() and stores it on the order, but that only works if the
+ * Supabase client making the call is actually authenticated as the caller.
+ * A guest (no session) gets exactly the same anon-key client as before —
+ * this is strictly additive, guest checkout is unaffected.
  */
 export const createOrderFn = createServerFn({ method: "POST" })
+  .middleware([attachOptionalSupabaseAuth])
   .validator(createOrderInputSchema)
-  .handler(async ({ data }): Promise<OrderActionResult> => {
-    const { data: result, error } = await supabase.rpc("create_order", {
+  .handler(async ({ data, context }): Promise<OrderActionResult> => {
+    const { data: result, error } = await context.supabase.rpc("create_order", {
       p_customer_name: data.customerName,
       p_phone: data.phone,
       p_order_type: data.orderType,
@@ -181,12 +189,15 @@ const getOrderInputSchema = z.object({
  * Looks up a previously created order for the order-confirmation page.
  * Guests (no account) must supply the guestToken returned by createOrderFn;
  * logged-in owners are matched server-side via their session instead — see
- * get_order() in the same migration.
+ * get_order() in the same migration. Stage 4: now actually wired up via
+ * attachOptionalSupabaseAuth, so the "authenticated owner" branch inside
+ * get_order() is reachable rather than dead code.
  */
 export const getOrderFn = createServerFn({ method: "GET" })
+  .middleware([attachOptionalSupabaseAuth])
   .validator(getOrderInputSchema)
-  .handler(async ({ data }): Promise<OrderActionResult> => {
-    const { data: result, error } = await supabase.rpc("get_order", {
+  .handler(async ({ data, context }): Promise<OrderActionResult> => {
+    const { data: result, error } = await context.supabase.rpc("get_order", {
       p_order_number: data.orderNumber,
       ...(data.guestToken ? { p_guest_token: data.guestToken } : {}),
     });

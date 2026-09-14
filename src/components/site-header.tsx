@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, ShoppingBag, X } from "lucide-react";
+import { Menu, ShoppingBag, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCart } from "@/lib/cart-context";
+import { signOut, useSupabaseSession } from "@/lib/customer-auth";
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -13,6 +20,7 @@ const NAV = [
 export function SiteHeader() {
   const { itemCount } = useCart();
   const [open, setOpen] = useState(false);
+  const session = useSupabaseSession();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
@@ -21,9 +29,7 @@ export function SiteHeader() {
           <span className="gradient-warm flex h-9 w-9 items-center justify-center rounded-xl font-display text-sm font-bold text-accent-foreground">
             K
           </span>
-          <span className="font-display text-lg font-bold tracking-tight">
-            KIN Kitchen
-          </span>
+          <span className="font-display text-lg font-bold tracking-tight">KIN Kitchen</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -41,6 +47,30 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {session.status === "signed-in" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Account menu">
+                  <User />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/account">My Account</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/account/orders">My Orders</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild variant="ghost" size="icon" aria-label="Sign in">
+              <Link to="/account/login">
+                <User />
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="ghost" size="icon" className="relative">
             <Link to="/cart" aria-label="View cart">
               <ShoppingBag />
@@ -78,6 +108,42 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+          {session.status === "signed-in" ? (
+            <>
+              <Link
+                to="/account"
+                onClick={() => setOpen(false)}
+                className="block rounded-xl px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                My Account
+              </Link>
+              <Link
+                to="/account/orders"
+                onClick={() => setOpen(false)}
+                className="block rounded-xl px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                My Orders
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  void signOut();
+                }}
+                className="block w-full rounded-xl px-3 py-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/account/login"
+              onClick={() => setOpen(false)}
+              className="block rounded-xl px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
       )}
     </header>

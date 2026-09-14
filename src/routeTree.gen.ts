@@ -14,11 +14,18 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as OrderConfirmationRouteImport } from './routes/order-confirmation'
+import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as AccountForgotPasswordRouteImport } from './routes/account/forgot-password'
+import { Route as AccountLoginRouteImport } from './routes/account/login'
+import { Route as AccountResetPasswordRouteImport } from './routes/account/reset-password'
+import { Route as AccountSignupRouteImport } from './routes/account/signup'
 import { Route as StaffIndexRouteImport } from './routes/staff/index'
 import { Route as StaffOrderNumberRouteImport } from './routes/staff/$orderNumber'
 import { Route as StaffLoginRouteImport } from './routes/staff/login'
 import { Route as StaffMenuRouteImport } from './routes/staff/menu'
 import { Route as StaffSettingsRouteImport } from './routes/staff/settings'
+import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
+import { Route as AccountOrdersOrderNumberRouteImport } from './routes/account/orders/$orderNumber'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -43,6 +50,31 @@ const MenuRoute = MenuRouteImport.update({
 const OrderConfirmationRoute = OrderConfirmationRouteImport.update({
   id: '/order-confirmation',
   path: '/order-confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountForgotPasswordRoute = AccountForgotPasswordRouteImport.update({
+  id: '/account/forgot-password',
+  path: '/account/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountLoginRoute = AccountLoginRouteImport.update({
+  id: '/account/login',
+  path: '/account/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountResetPasswordRoute = AccountResetPasswordRouteImport.update({
+  id: '/account/reset-password',
+  path: '/account/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountSignupRoute = AccountSignupRouteImport.update({
+  id: '/account/signup',
+  path: '/account/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StaffIndexRoute = StaffIndexRouteImport.update({
@@ -70,6 +102,17 @@ const StaffSettingsRoute = StaffSettingsRouteImport.update({
   path: '/staff/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountOrdersIndexRoute = AccountOrdersIndexRouteImport.update({
+  id: '/account/orders/',
+  path: '/account/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountOrdersOrderNumberRoute =
+  AccountOrdersOrderNumberRouteImport.update({
+    id: '/account/orders/$orderNumber',
+    path: '/account/orders/$orderNumber',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -77,11 +120,18 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/account/forgot-password': typeof AccountForgotPasswordRoute
+  '/account/login': typeof AccountLoginRoute
+  '/account/reset-password': typeof AccountResetPasswordRoute
+  '/account/signup': typeof AccountSignupRoute
   '/staff/$orderNumber': typeof StaffOrderNumberRoute
   '/staff/login': typeof StaffLoginRoute
   '/staff/menu': typeof StaffMenuRoute
   '/staff/settings': typeof StaffSettingsRoute
+  '/account/': typeof AccountIndexRoute
   '/staff/': typeof StaffIndexRoute
+  '/account/orders/$orderNumber': typeof AccountOrdersOrderNumberRoute
+  '/account/orders/': typeof AccountOrdersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,11 +139,18 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/account/forgot-password': typeof AccountForgotPasswordRoute
+  '/account/login': typeof AccountLoginRoute
+  '/account/reset-password': typeof AccountResetPasswordRoute
+  '/account/signup': typeof AccountSignupRoute
   '/staff/$orderNumber': typeof StaffOrderNumberRoute
   '/staff/login': typeof StaffLoginRoute
   '/staff/menu': typeof StaffMenuRoute
   '/staff/settings': typeof StaffSettingsRoute
+  '/account': typeof AccountIndexRoute
   '/staff': typeof StaffIndexRoute
+  '/account/orders/$orderNumber': typeof AccountOrdersOrderNumberRoute
+  '/account/orders': typeof AccountOrdersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,11 +159,18 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
   '/order-confirmation': typeof OrderConfirmationRoute
+  '/account/forgot-password': typeof AccountForgotPasswordRoute
+  '/account/login': typeof AccountLoginRoute
+  '/account/reset-password': typeof AccountResetPasswordRoute
+  '/account/signup': typeof AccountSignupRoute
   '/staff/$orderNumber': typeof StaffOrderNumberRoute
   '/staff/login': typeof StaffLoginRoute
   '/staff/menu': typeof StaffMenuRoute
   '/staff/settings': typeof StaffSettingsRoute
+  '/account/': typeof AccountIndexRoute
   '/staff/': typeof StaffIndexRoute
+  '/account/orders/$orderNumber': typeof AccountOrdersOrderNumberRoute
+  '/account/orders/': typeof AccountOrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,11 +180,18 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/menu'
     | '/order-confirmation'
+    | '/account/forgot-password'
+    | '/account/login'
+    | '/account/reset-password'
+    | '/account/signup'
     | '/staff/$orderNumber'
     | '/staff/login'
     | '/staff/menu'
     | '/staff/settings'
+    | '/account/'
     | '/staff/'
+    | '/account/orders/$orderNumber'
+    | '/account/orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,11 +199,18 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/menu'
     | '/order-confirmation'
+    | '/account/forgot-password'
+    | '/account/login'
+    | '/account/reset-password'
+    | '/account/signup'
     | '/staff/$orderNumber'
     | '/staff/login'
     | '/staff/menu'
     | '/staff/settings'
+    | '/account'
     | '/staff'
+    | '/account/orders/$orderNumber'
+    | '/account/orders'
   id:
     | '__root__'
     | '/'
@@ -140,11 +218,18 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/menu'
     | '/order-confirmation'
+    | '/account/forgot-password'
+    | '/account/login'
+    | '/account/reset-password'
+    | '/account/signup'
     | '/staff/$orderNumber'
     | '/staff/login'
     | '/staff/menu'
     | '/staff/settings'
+    | '/account/'
     | '/staff/'
+    | '/account/orders/$orderNumber'
+    | '/account/orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,11 +238,18 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   MenuRoute: typeof MenuRoute
   OrderConfirmationRoute: typeof OrderConfirmationRoute
+  AccountForgotPasswordRoute: typeof AccountForgotPasswordRoute
+  AccountLoginRoute: typeof AccountLoginRoute
+  AccountResetPasswordRoute: typeof AccountResetPasswordRoute
+  AccountSignupRoute: typeof AccountSignupRoute
   StaffOrderNumberRoute: typeof StaffOrderNumberRoute
   StaffLoginRoute: typeof StaffLoginRoute
   StaffMenuRoute: typeof StaffMenuRoute
   StaffSettingsRoute: typeof StaffSettingsRoute
+  AccountIndexRoute: typeof AccountIndexRoute
   StaffIndexRoute: typeof StaffIndexRoute
+  AccountOrdersOrderNumberRoute: typeof AccountOrdersOrderNumberRoute
+  AccountOrdersIndexRoute: typeof AccountOrdersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -197,6 +289,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderConfirmationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/': {
+      id: '/account/'
+      path: '/account'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/forgot-password': {
+      id: '/account/forgot-password'
+      path: '/account/forgot-password'
+      fullPath: '/account/forgot-password'
+      preLoaderRoute: typeof AccountForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/login': {
+      id: '/account/login'
+      path: '/account/login'
+      fullPath: '/account/login'
+      preLoaderRoute: typeof AccountLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/reset-password': {
+      id: '/account/reset-password'
+      path: '/account/reset-password'
+      fullPath: '/account/reset-password'
+      preLoaderRoute: typeof AccountResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/signup': {
+      id: '/account/signup'
+      path: '/account/signup'
+      fullPath: '/account/signup'
+      preLoaderRoute: typeof AccountSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/staff/': {
       id: '/staff/'
       path: '/staff'
@@ -232,6 +359,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/orders/': {
+      id: '/account/orders/'
+      path: '/account/orders'
+      fullPath: '/account/orders/'
+      preLoaderRoute: typeof AccountOrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/orders/$orderNumber': {
+      id: '/account/orders/$orderNumber'
+      path: '/account/orders/$orderNumber'
+      fullPath: '/account/orders/$orderNumber'
+      preLoaderRoute: typeof AccountOrdersOrderNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -241,11 +382,18 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   MenuRoute: MenuRoute,
   OrderConfirmationRoute: OrderConfirmationRoute,
+  AccountForgotPasswordRoute: AccountForgotPasswordRoute,
+  AccountLoginRoute: AccountLoginRoute,
+  AccountResetPasswordRoute: AccountResetPasswordRoute,
+  AccountSignupRoute: AccountSignupRoute,
   StaffOrderNumberRoute: StaffOrderNumberRoute,
   StaffLoginRoute: StaffLoginRoute,
   StaffMenuRoute: StaffMenuRoute,
   StaffSettingsRoute: StaffSettingsRoute,
+  AccountIndexRoute: AccountIndexRoute,
   StaffIndexRoute: StaffIndexRoute,
+  AccountOrdersOrderNumberRoute: AccountOrdersOrderNumberRoute,
+  AccountOrdersIndexRoute: AccountOrdersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

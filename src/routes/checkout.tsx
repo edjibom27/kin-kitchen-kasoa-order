@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart-context";
 import { formatCedis } from "@/lib/menu-data";
 import { restaurantSettingsQueryOptions } from "@/lib/queries";
+import { useSupabaseSession } from "@/lib/customer-auth";
+import { fetchMyProfile } from "@/lib/account";
 import {
   createOrderFn,
   cartLinesToOrderItems,
@@ -76,10 +78,31 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { lines, subtotal, clearCart } = useCart();
   const { data: settings } = useSuspenseQuery(restaurantSettingsQueryOptions());
+  const session = useSupabaseSession();
+  const userId = session.status === "signed-in" ? session.session.user.id : null;
+  const { data: profile } = useQuery({
+    queryKey: ["my-profile", userId],
+    queryFn: () => fetchMyProfile(userId!),
+    enabled: Boolean(userId),
+  });
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Stage 4: prefill from the signed-in customer's saved profile — still
+  // fully editable before submitting, and never overwrites something the
+  // customer has already typed. Guests (no session) never trigger this;
+  // the fields simply start empty, exactly as before.
+  useEffect(() => {
+    if (!profile) return;
+    setFullName((prev) => prev || profile.full_name || "");
+    setPhone((prev) => prev || profile.phone || "");
+    setAddress((prev) => prev || profile.default_address || "");
+  }, [profile]);
 
   const deliveryFee = orderType === "delivery" ? settings.deliveryFee : 0;
   const total = subtotal + deliveryFee;
@@ -114,10 +137,10 @@ function CheckoutPage() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const parsed = checkoutSchema.safeParse({
-      fullName: String(formData.get("fullName") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
+      fullName,
+      phone,
       orderType,
-      address: String(formData.get("address") ?? ""),
+      address,
       landmark: String(formData.get("landmark") ?? ""),
       paymentMethod,
       momoNumber: String(formData.get("momoNumber") ?? ""),
@@ -197,6 +220,8 @@ function CheckoutPage() {
                   placeholder="Ama Mensah"
                   maxLength={80}
                   autoComplete="name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                 />
               </Field>
               <Field label="Phone number" error={errors["phone"]}>
@@ -206,6 +231,8 @@ function CheckoutPage() {
                   inputMode="tel"
                   maxLength={15}
                   autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </Field>
             </div>
@@ -235,6 +262,8 @@ function CheckoutPage() {
                     name="address"
                     placeholder="House 24, Ofaakor Road, Kasoa"
                     maxLength={200}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
                   />
                 </Field>
                 <Field label="Landmark / delivery instructions" error={errors["landmark"]} optional>
