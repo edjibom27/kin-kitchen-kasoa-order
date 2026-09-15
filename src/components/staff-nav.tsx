@@ -9,8 +9,12 @@ const NAV_ITEMS = [
   { to: "/staff/settings", label: "Settings", key: "settings" as const },
 ];
 
-export function StaffNav({ active }: { active: "orders" | "menu" | "settings" }) {
+export function StaffNav({ active }: { active: "orders" | "menu" | "settings" | "admin" }) {
   const session = useStaffSession();
+  const isAdmin = session.status === "authorized" && session.role === "admin";
+  const navItems = isAdmin
+    ? [...NAV_ITEMS, { to: "/admin", label: "Analytics", key: "admin" as const }]
+    : NAV_ITEMS;
 
   return (
     <header className="border-b border-border/70 bg-card">
@@ -20,7 +24,7 @@ export function StaffNav({ active }: { active: "orders" | "menu" | "settings" })
             KIN Kitchen
           </p>
           <nav className="mt-2 flex flex-wrap gap-4">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.key}
                 to={item.to}

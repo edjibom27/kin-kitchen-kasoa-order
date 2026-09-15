@@ -19,6 +19,7 @@ import { Route as AccountForgotPasswordRouteImport } from './routes/account/forg
 import { Route as AccountLoginRouteImport } from './routes/account/login'
 import { Route as AccountResetPasswordRouteImport } from './routes/account/reset-password'
 import { Route as AccountSignupRouteImport } from './routes/account/signup'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StaffIndexRouteImport } from './routes/staff/index'
 import { Route as StaffOrderNumberRouteImport } from './routes/staff/$orderNumber'
 import { Route as StaffLoginRouteImport } from './routes/staff/login'
@@ -77,6 +78,11 @@ const AccountSignupRoute = AccountSignupRouteImport.update({
   path: '/account/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StaffIndexRoute = StaffIndexRouteImport.update({
   id: '/staff/',
   path: '/staff/',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/staff/menu': typeof StaffMenuRoute
   '/staff/settings': typeof StaffSettingsRoute
   '/account/': typeof AccountIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/account/orders/$orderNumber': typeof AccountOrdersOrderNumberRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/staff/menu': typeof StaffMenuRoute
   '/staff/settings': typeof StaffSettingsRoute
   '/account': typeof AccountIndexRoute
+  '/admin': typeof AdminIndexRoute
   '/staff': typeof StaffIndexRoute
   '/account/orders/$orderNumber': typeof AccountOrdersOrderNumberRoute
   '/account/orders': typeof AccountOrdersIndexRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/staff/menu': typeof StaffMenuRoute
   '/staff/settings': typeof StaffSettingsRoute
   '/account/': typeof AccountIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/account/orders/$orderNumber': typeof AccountOrdersOrderNumberRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/staff/menu'
     | '/staff/settings'
     | '/account/'
+    | '/admin/'
     | '/staff/'
     | '/account/orders/$orderNumber'
     | '/account/orders/'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/staff/menu'
     | '/staff/settings'
     | '/account'
+    | '/admin'
     | '/staff'
     | '/account/orders/$orderNumber'
     | '/account/orders'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/staff/menu'
     | '/staff/settings'
     | '/account/'
+    | '/admin/'
     | '/staff/'
     | '/account/orders/$orderNumber'
     | '/account/orders/'
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   StaffMenuRoute: typeof StaffMenuRoute
   StaffSettingsRoute: typeof StaffSettingsRoute
   AccountIndexRoute: typeof AccountIndexRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   StaffIndexRoute: typeof StaffIndexRoute
   AccountOrdersOrderNumberRoute: typeof AccountOrdersOrderNumberRoute
   AccountOrdersIndexRoute: typeof AccountOrdersIndexRoute
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountSignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/staff/': {
       id: '/staff/'
       path: '/staff'
@@ -391,6 +411,7 @@ const rootRouteChildren: RootRouteChildren = {
   StaffMenuRoute: StaffMenuRoute,
   StaffSettingsRoute: StaffSettingsRoute,
   AccountIndexRoute: AccountIndexRoute,
+  AdminIndexRoute: AdminIndexRoute,
   StaffIndexRoute: StaffIndexRoute,
   AccountOrdersOrderNumberRoute: AccountOrdersOrderNumberRoute,
   AccountOrdersIndexRoute: AccountOrdersIndexRoute,

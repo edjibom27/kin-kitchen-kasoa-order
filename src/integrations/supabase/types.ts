@@ -308,6 +308,75 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_best_selling_items: {
+        Args: {
+          p_end: string
+          p_limit?: number
+          p_start: string
+        }
+        Returns: {
+          item_name: string
+          quantity_sold: number
+          revenue: number
+        }[]
+      }
+      admin_category_sales: {
+        Args: {
+          p_end: string
+          p_start: string
+        }
+        Returns: {
+          category_name: string
+          quantity_sold: number
+          revenue: number
+        }[]
+      }
+      admin_customer_insights: {
+        Args: {
+          p_end: string
+          p_start: string
+        }
+        Returns: {
+          avg_orders_per_customer: number
+          customers_with_orders: number
+          new_customers_in_period: number
+          returning_customers: number
+          total_customers: number
+        }[]
+      }
+      admin_dashboard_overview: {
+        Args: {
+          p_end: string
+          p_start: string
+        }
+        Returns: {
+          average_order_value: number
+          registered_customers: number
+          total_orders: number
+          total_revenue: number
+        }[]
+      }
+      admin_revenue_series: {
+        Args: {
+          p_end: string
+          p_start: string
+        }
+        Returns: {
+          bucket_date: string
+          order_count: number
+          revenue: number
+        }[]
+      }
+      admin_status_counts: {
+        Args: {
+          p_end: string
+          p_start: string
+        }
+        Returns: {
+          order_count: number
+          status: Database["public"]["Enums"]["order_status"]
+        }[]
+      }
       create_order: {
         Args: {
           p_address: string
